@@ -55,7 +55,9 @@ export const App = (props) => {
     if (Array.isArray(country.capital)) {
       country.capital = country.capital.join('')
     }
-    const languagesString = Object.keys(country.languages).map((key) => country.languages[key]).join(", ");
+    const languagesString = Object.keys(country.languages).reduce((acc, key) => {
+      return `${acc}, ${country.languages[key]}`;
+    }, "");
     
     // Filtering the data using the search state
     return (
@@ -66,27 +68,34 @@ export const App = (props) => {
   )})
 
   // Mapping all countries in the API and returning all of them in separate panels
-  const allCountries = filteredData.map(
-    ({name, capital, region, population, languages, flags, currencies}) => {
-
+  const allCountries = [];
+  filteredData.forEach((country) => {
+    let { name, capital, population, languages, flags, currencies } = country;
+    
     // Error handling missing info
     capital = capital == null ? "Not Found" : capital;
-    region = region == null ? "Not Found" : region;
     population = population == null ? "Not Found" : population;
     languages = languages == null ? "Not Found" : languages;
     flags = flags == null ? "Not Found" : flags;
     currencies = currencies == null ? "Not Found" : currencies;
-  
 
     // Converting languages to a string
-    const languagesString = Object.keys(languages).map((key) => languages[key]).join(", ");
+    let languagesString = "";
+    Object.keys(languages).forEach((key) => {
+      languagesString += `${languages[key]}, `;
+    });
+    languagesString = languagesString.slice(0, -2);  // removes the last comma and space
 
     // Converting currencies to a string
-    const currenciesString = Object.keys(currencies).map((key) => currencies[key].name).join(", ");
+    let currenciesString = "";
+    Object.keys(currencies).forEach((key) => {
+      currenciesString += `${currencies[key].name}, `;
+    });
+    currenciesString = currenciesString.slice(0, -2);  // removes the last comma and space
 
     // Rendering panels of all countries
-      return (
-        <div className='countryPanel'>
+    allCountries.push(
+      <div className='countryPanel'>
         <ul>
           <div className='flagContainer'>
             <img src={flags.svg} alt="flag" className='flag'/>
@@ -94,17 +103,20 @@ export const App = (props) => {
           <li><p className='countryName'>{name.common}</p></li>
           <li><p>Capital:</p> {capital}</li>
           <li><p>{Object.keys(languages).length > 1 ? `Languages:` : `Language:`}</p> {languagesString}</li>
-          <li><p>Population:</p> {population.toLocaleString('en-US')}</li>
+          <li><p>Population:</p> {new Intl.NumberFormat('en-US').format(population)}</li>
           <li><p>{Object.keys(currencies).length > 1 ? `Currencies:` : `Currency:`}</p> {currenciesString}</li>
         </ul>
       </div>
-      )
-    })
+    );
+  });
 
     // Creating a bar chart of the 10 most populated countries in the world and top 10 most spoken languages
     const PopulationGraph = React.memo(props => {
       if (data.length > 0) {
-        const population = data.map((country) => ({name: country.name.common, population: country.population,}));
+        const population = [];
+        data.forEach((country) => {
+          population.push({ name: country.name.common, population: country.population });
+        });
     
         // Calculate world population
         let worldPopulation = 0
@@ -189,7 +201,7 @@ export const App = (props) => {
               data={chartData}
               options={chartOptions}
             />
-            <a href='#home'><i class="material-symbols-outlined" id='homeButton' style={{fontSize:36, color: '#005555'}}>home</i></a>
+            <a href='#home'><i className="material-symbols-outlined" id='homeButton' style={{fontSize:36, color: '#005555'}}>home</i></a>
 
           </div>
         );
